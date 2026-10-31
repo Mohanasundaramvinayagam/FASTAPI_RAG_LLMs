@@ -1,0 +1,9 @@
+fastapi
+uvicorn
+chromadb
+sentence-transformers
+pypdf
+groq
+python-multipart
+prometheus-fastapi-instrumentator
+python-dotenv
