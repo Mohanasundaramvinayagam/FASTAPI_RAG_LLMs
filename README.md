@@ -1,40 +1,39 @@
-# ⚡ Low-Latency RAG & Cached LLM Inference Engine
+# ⚡ Full-Stack RAG & Low-Latency LLM Inference Engine
 
-A production-oriented Retrieval-Augmented Generation (RAG) API built with **FastAPI**, **ChromaDB**, **Hugging Face (`all-MiniLM-L6-v2`)**, **Groq LLM Inference**, **MD5 $O(1)$ Hash Caching**, and **SQLite / Prometheus Observability**.
-
-## 🚀 Key Features & Architecture
-1. **Automated Vector ETL Pipeline (`POST /ingest`):**
-   - Extracts text page-by-page from uploaded PDFs using `pypdf`.
-   - Encodes text into 384-dimensional dense vector embeddings using Hugging Face's `all-MiniLM-L6-v2`.
-   - Upserts embeddings into **ChromaDB** for semantic similarity search.
-2. **$O(1)$ Hash-Based Caching & RAG (`POST /query`):**
-   - Normalizes and hashes incoming prompts using `MD5` for $O(1)$ in-memory cache lookups.
-   - **Cache Hit Path (< 1 ms):** Returns cached responses in `~0.02 ms`, bypassing vector search and LLM token costs.
-   - **Cache Miss Path (~400–700 ms):** Retrieves top relevant chunks from ChromaDB, injects context into the system prompt, and runs high-speed inference via the **Groq API**.
-3. **SQL Telemetry & Prometheus Metrics (`GET /analytics` & `GET /metrics`):**
-   - Logs every request (`query_text`, `cache_hit`, `latency_ms`, `created_at`) to a local **SQLite** database (`metrics.db`).
-   - Computes real-time latency comparisons (`AVG`, `MIN`, `MAX`, `COUNT`) grouped by Cache Hit vs. LLM Inference.
-   - Exposes `/metrics` via `prometheus-fastapi-instrumentator` for HTTP monitoring.
+A decoupled, containerized AI microservice application pairing an asynchronous **FastAPI** backend with an interactive **Streamlit** frontend. Built to solve high LLM latency and redundant token costs through **Vector RAG**, **$O(1)$ Hash-Based Prompt Caching**, and **Relational SQL Telemetry**.
 
 ---
 
-## 📊 Performance Benchmark
+## 🏗️ System Architecture & Core Workflow
 
-| Query Path | Source | Typical Latency | Speedup |
-| :--- | :--- | :--- | :--- |
-| **First Request (Cache Miss)** | ChromaDB + Groq LLM | `~450.00 ms` | Baseline (`1x`) |
-| **Repeated Request (Cache Hit)** | In-Memory MD5 Hash Lookup | **`~0.02 ms`** | **`>99.9%` faster** |
+1. **Interactive Client Layer (`Streamlit`):**
+   - Provides a clean UI for PDF document uploads, natural language querying, and real-time visualization of cache vs. LLM latency metrics.
+2. **Asynchronous API Gateway (`FastAPI`):**
+   - Exposes RESTful endpoints (`/ingest`, `/query`, `/analytics`, `/metrics`) with Pydantic schema validation and auto-generated Swagger UI documentation.
+3. **Automated Document ETL & Vector Search (`ChromaDB` + `Sentence-Transformers`):**
+   - Extracts raw text from PDFs (`pypdf`), encodes chunks into 384-dimensional dense vector embeddings (`all-MiniLM-L6-v2`), and performs semantic similarity retrieval.
+4. **$O(1)$ Prompt Caching Layer (`MD5 Hash Lookup`):**
+   - Normalizes incoming queries and computes an MD5 digest prior to vector search.
+   - **Cache Hit (<2ms):** Returns pre-computed responses instantly, cutting latency by **99%** and saving LLM API compute.
+   - **Cache Miss (~400ms):** Retrieves top context chunks from ChromaDB and invokes **Llama-3.1-8B** via Groq.
+5. **Production Observability (`SQLite` + `Prometheus`):**
+   - Logs every request's execution time and cache status into a relational SQL database, executing `GROUP BY` aggregations (`AVG`, `MIN`, `MAX`, `COUNT`) to monitor SLAs alongside `/metrics` for Prometheus scraping.
 
 ---
 
-## 🛠️ Local Setup & Installation
+## 🛠️ Tech Stack
+- **Backend & API:** Python, FastAPI, Uvicorn, Pydantic
+- **Frontend UI:** Streamlit, Requests
+- **AI & Vector Pipeline:** Llama-3.1-8B (Groq), ChromaDB, Hugging Face `sentence-transformers`, `pypdf`
+- **Database & Telemetry:** SQLite3 (Relational SQL Aggregations), Prometheus (`prometheus-fastapi-instrumentator`)
+- **DevOps & Packaging:** Docker
 
-### 1. Clone the Repository & Create Virtual Environment
+---
+
+## 🚀 Quick Start (Run Locally)
+
+### 1. Clone the Repository & Install Dependencies
 ```bash
-git clone [https://github.com/YOUR_USERNAME/low-latency-rag-engine.git](https://github.com/YOUR_USERNAME/low-latency-rag-engine.git)
-cd low-latency-rag-engine
-python -m venv venv
-# Windows PowerShell:
-.\venv\Scripts\Activate.ps1
-# Mac/Linux:
-source venv/bin/activate
+git clone [https://github.com/Mohanasundaramvinayagam/FASTAPI_RAG_LLMs.git](https://github.com/Mohanasundaramvinayagam/FASTAPI_RAG_LLMs.git)
+cd FASTAPI_RAG_LLMs
+pip install -r requirements.txt

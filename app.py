@@ -11,6 +11,7 @@ from sentence_transformers import SentenceTransformer
 from pypdf import PdfReader
 from groq import Groq
 from prometheus_fastapi_instrumentator import Instrumentator
+load_dotenv()
 
 # Initialize FastAPI App
 app = FastAPI(
@@ -40,11 +41,11 @@ CREATE TABLE IF NOT EXISTS query_logs (
 )
 """)
 conn.commit()
-load_dotenv()
+
 
 # 4. Initialize Groq Client (Loads safely from .env)
 GROQ_API_KEY = os.getenv("GROQ_API_KEY", "").strip()
-groq_client = Groq(api_key=GROQ_API_KEY)
+groq_client = Groq(api_key=GROQ_API_KEY) 
 
 class QueryRequest(BaseModel):
     prompt: str
@@ -66,6 +67,7 @@ async def ingest_pdf(file: UploadFile = File(...)):
 
         embeddings = embedder.encode(chunks).tolist()
         collection.upsert(documents=chunks, embeddings=embeddings, ids=ids)
+        prompt_cache.clear()
         return {
             "status": "Successfully Ingested",
             "filename": file.filename,

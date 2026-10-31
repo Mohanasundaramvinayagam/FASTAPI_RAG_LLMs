@@ -7,3 +7,6 @@ groq
 python-multipart
 prometheus-fastapi-instrumentator
 python-dotenv
+streamlit
+requests
+pandas
